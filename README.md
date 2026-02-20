@@ -96,7 +96,7 @@ cd C:\BillingSystem
 
 **Step 3 — Compile:**
 ```bash
-g++ main.cpp globals.cpp ui.cpp helpers.cpp login.cpp signup.cpp billing.cpp -o BillingSystem.exe -I"C:/raylib-5.0_win64_mingw-w64/include" -L"C:/raylib-5.0_win64_mingw-w64/lib" -lraylib -lopengl32 -lgdi32 -lwinmm
+g++ main.cpp globals.cpp ui.cpp helpers.cpp login.cpp signup.cpp billing.cpp history.cpp -o BillingSystem.exe -I"C:/raylib-5.0_win64_mingw-w64/include" -L"C:/raylib-5.0_win64_mingw-w64/lib" -lraylib -lopengl32 -lgdi32 -lwinmm
 ```
 
 **Step 4 — Run:**
