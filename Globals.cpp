@@ -1,21 +1,47 @@
 #include "globals.h"
 #include <cstring>
 
-// ─────────────────────────────────────────────
+
 //  FONTS
-// ─────────────────────────────────────────────
+
 Font fontRegular  = {};
 Font fontBold     = {};
 Font fontSemiBold = {};
 
-// ─────────────────────────────────────────────
-//  LOGO TEXTURE
-// ─────────────────────────────────────────────
+
+//  LOGO
+
 Texture2D logoTexture = {};
 
-// ─────────────────────────────────────────────
-//  POPPINS DRAW HELPERS
-// ─────────────────────────────────────────────
+
+//  HASH TABLE — User store
+
+std::unordered_map<std::string, User> userHashTable;
+
+void HashInsertUser(const User& u) {
+    userHashTable[u.username] = u;
+}
+
+bool HashUserExists(const std::string& username) {
+    return userHashTable.find(username) != userHashTable.end();
+}
+
+bool HashCheckLogin(const std::string& username, const std::string& password) {
+    auto it = userHashTable.find(username);
+    if (it != userHashTable.end())
+        return it->second.password == password;
+    return false;
+}
+
+void HashRebuild() {
+    userHashTable.clear();
+    for (auto& u : users)
+        userHashTable[u.username] = u;
+}
+
+
+//  POPPINS HELPERS
+
 void DrawPoppins(const char* text, int x, int y, float size, Color color) {
     DrawTextEx(fontRegular, text, {(float)x,(float)y}, size, size*0.04f, color);
 }
@@ -29,12 +55,13 @@ int MeasurePoppins(const char* text, float size) {
     return (int)MeasureTextEx(fontRegular, text, size, size*0.04f).x;
 }
 
-// ─────────────────────────────────────────────
+
 //  GLOBAL STATE DEFINITIONS
-// ─────────────────────────────────────────────
+
 Screen             currentScreen = SCREEN_LOGIN;
 std::vector<User>  users;
 std::string        loggedUser    = "";
+BillHistory        billHistory;
 
 // Login
 char        loginUser[64]  = "";
@@ -62,3 +89,6 @@ int         billFocus      = -1;
 std::string billMsg        = "";
 bool        billMsgOk      = false;
 float       billScroll     = 0;
+
+// History
+float       histScroll     = 0;

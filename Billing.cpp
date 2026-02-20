@@ -13,16 +13,21 @@
 void DrawBillingScreen() {
     DrawBackground();
 
-    // Top Bar
+    // ── Top Bar ───────────────────────────────
     DrawRectangle(0,0,SW,56,PANEL);
     GlowLine(0,56,SW,56,{40,50,80,255});
-    DrawPoppinsBold("NEPSys", 24, 16, 20, ACCENT);
-    DrawPoppins("Billing Dashboard", 108, 20, 14, TXT_DIM);
+    DrawPoppinsBold("NEPSys",24,16,20,ACCENT);
+    DrawPoppins("Billing Dashboard",108,20,14,TXT_DIM);
 
     std::string uinfo = "Logged in: " + loggedUser;
-    DrawPoppins(uinfo.c_str(), SW-MeasurePoppins(uinfo.c_str(),13)-120, 21, 13, TXT_DIM);
+    DrawPoppins(uinfo.c_str(),SW-MeasurePoppins(uinfo.c_str(),13)-230,21,13,TXT_DIM);
 
-    if (Button({(float)SW-110,12,90,32}, "LOGOUT", {60,20,20,200}, DANGER, 0.25f)) {
+    // History button
+    if (Button({(float)SW-220,12,100,32},"HISTORY",{30,38,60,200},ACCENT,0.25f))
+        currentScreen=SCREEN_HISTORY;
+
+    // Logout button
+    if (Button({(float)SW-110,12,90,32},"LOGOUT",{60,20,20,200},DANGER,0.25f)) {
         currentScreen=SCREEN_LOGIN;
         loggedUser=""; loginFocus=-1; loginError=false;
         memset(loginUser,0,sizeof(loginUser));
@@ -30,15 +35,15 @@ void DrawBillingScreen() {
         cart.clear();
     }
 
-    // Left panel: Add Item
-    Rectangle leftPanel = {16,72,340,290};
+    // ── Left Panel: Add Item ──────────────────
+    Rectangle leftPanel={16,72,340,290};
     RRect(leftPanel,0.04f,PANEL);
     RRectLines(leftPanel,0.04f,1.2f,BORDER);
-    DrawPoppinsSemi("Add Item", 36, 90, 16, ACCENT);
+    DrawPoppinsSemi("Add Item",36,90,16,ACCENT);
     GlowLine(36,112,200,112,ACCENT);
 
-    float py = 122;
-    DrawPoppins("Item Name", 36,(int)py,13,TXT_DIM);
+    float py=122;
+    DrawPoppins("Item Name",36,(int)py,13,TXT_DIM);
     Rectangle rName={36,py+16,300,38};
     if (InputBox(rName,itemName,64,billFocus==0,"e.g. Laptop")) billFocus=0;
 
@@ -60,7 +65,8 @@ void DrawBillingScreen() {
             else if (p<0) { billMsg="Price cannot be negative."; billMsgOk=false; }
             else {
                 bool found=false;
-                for (auto& it:cart) if (it.name==itemName){it.qty+=q;found=true;break;}
+                for (auto& it:cart)
+                    if (it.name==itemName){it.qty+=q;found=true;break;}
                 if (!found) cart.push_back({itemName,q,p});
                 billMsg="Item added!"; billMsgOk=true;
                 memset(itemName,0,sizeof(itemName));
@@ -70,10 +76,14 @@ void DrawBillingScreen() {
             }
         }
     }
-    if (!billMsg.empty())
-        DrawPoppins(billMsg.c_str(),36,(int)py+52,13,billMsgOk?SUCCESS:DANGER);
 
-    // Bill Table
+    // DSA label
+    DrawPoppins("DSA: Vector + Linear Search",36,(int)py+52,11,{60,80,120,200});
+
+    if (!billMsg.empty())
+        DrawPoppins(billMsg.c_str(),36,(int)py+68,13,billMsgOk?SUCCESS:DANGER);
+
+    // ── Bill Table ────────────────────────────
     Rectangle tablePanel={370,72,SW-386.0f,(float)SH-160};
     RRect(tablePanel,0.03f,PANEL);
     RRectLines(tablePanel,0.03f,1.2f,BORDER);
@@ -117,46 +127,61 @@ void DrawBillingScreen() {
         if (contentH<=viewH) billScroll=0;
     }
 
-    // Bottom Summary Bar
+    // ── Bottom Summary Bar ────────────────────
     DrawRectangle(0,SH-88,SW,88,PANEL);
     GlowLine(0,SH-88,SW,SH-88,BORDER);
+
     std::ostringstream tot;
     tot<<"TOTAL:  Rs. "<<std::fixed<<std::setprecision(2)<<CartTotal();
     DrawPoppinsBold(tot.str().c_str(),390,SH-62,20,ACCENT);
     std::string cnt=std::to_string(cart.size())+" item(s)";
     DrawPoppins(cnt.c_str(),390,SH-36,12,TXT_DIM);
 
+    // DSA label bottom
+    DrawPoppins("DSA: Hash Table (login) | Linked List (history)",
+                390,SH-18,10,{60,80,120,180});
+
     // Print Bill
     if (Button({(float)SW-280,(float)SH-72,120,44},"PRINT BILL",ACCENT,BG)) {
         if (cart.empty()) { billMsg="Cart is empty!"; billMsgOk=false; }
         else {
+            // Save to Linked List (bill history)
+            time_t now=time(0);
+            std::string dt=ctime(&now);
+            if (!dt.empty() && dt.back()=='\n') dt.pop_back();
+            billHistory.push(cart, CartTotal(), loggedUser, dt);
+
+            // Save receipt to file
             std::ofstream r("receipt.txt");
-            time_t now=time(0); std::string dt=ctime(&now);
             r<<"============================================\n";
             r<<"             BillingSystem Receipt\n";
             r<<"============================================\n";
-            r<<"Date: "<<dt<<"Cashier: "<<loggedUser<<"\n";
+            r<<"Date: "<<dt<<"\n";
+            r<<"Cashier: "<<loggedUser<<"\n";
+            r<<"Bill #"<<billHistory.count<<"\n";
             r<<"--------------------------------------------\n";
-            r<<std::left<<std::setw(22)<<"Item"<<std::setw(6)<<"Qty"<<std::setw(12)<<"Price"<<"Total\n";
+            r<<std::left<<std::setw(22)<<"Item"
+             <<std::setw(6)<<"Qty"<<std::setw(12)<<"Price"<<"Total\n";
             r<<"--------------------------------------------\n";
             for (auto& it:cart)
-                r<<std::left<<std::setw(22)<<it.name<<std::setw(6)<<it.qty
-                 <<std::setw(12)<<it.price<<it.qty*it.price<<"\n";
+                r<<std::left<<std::setw(22)<<it.name
+                 <<std::setw(6)<<it.qty
+                 <<std::setw(12)<<it.price
+                 <<it.qty*it.price<<"\n";
             r<<"============================================\n";
             r<<"GRAND TOTAL: Rs. "<<std::fixed<<std::setprecision(2)<<CartTotal()<<"\n";
             r<<"============================================\n";
             r<<"       Thank you for your business!\n";
             r.close();
-            billMsg="Receipt saved to receipt.txt"; billMsgOk=true;
+            billMsg="Bill #"+std::to_string(billHistory.count)+" saved to history!";
+            billMsgOk=true;
         }
     }
 
+    // Clear Bill
     if (Button({(float)SW-148,(float)SH-72,120,44},"CLEAR BILL",{60,20,20,200},DANGER)) {
         cart.clear(); billMsg="Bill cleared."; billMsgOk=true; billScroll=0;
     }
 
     if (billFocus>=0 && IsKeyPressed(KEY_TAB)) billFocus=(billFocus+1)%3;
-
-    // Version
-    DrawPoppins("NEPSys v1.0", SW-MeasurePoppins("NEPSys v1.0",11)-8, SH-16, 11, {40,50,80,200});
 }
