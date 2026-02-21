@@ -24,7 +24,7 @@ void DrawSignupScreen() {
     cy += 64;
     DrawPoppins("Full Name",(int)card.x+30,(int)cy,13,TXT_DIM);
     Rectangle rName={card.x+30,cy+18,card.width-60,40};
-    if (InputBox(rName,signName,64,signFocus==0,"John Doe")) signFocus=0;
+    if (InputBox(rName,signName,64,signFocus==0,"Arip sunar")) signFocus=0;
 
     cy += 66;
     DrawPoppins("Username",(int)card.x+30,(int)cy,13,TXT_DIM);
